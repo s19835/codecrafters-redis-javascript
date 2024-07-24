@@ -1,5 +1,7 @@
 import net from "net";
 
+const store = {} // Object for stroing key value pair for GET, SET
+
 // Implement a Redis protocol parser
 function redisProtocolParser(data) {
     return `$${data.length}\r\n${data}\r\n`;
@@ -18,13 +20,24 @@ const server = net.createServer((connection) => {
 
     switch (command) {
         case 'PING':
-            connection.write('+PONG\r\n');
+            connection.write('+PONG\r\n'); // Simple String response
             break;
         
         case 'ECHO':
-            connection.write(redisProtocolParser(recived[4]));
+            connection.write(redisProtocolParser(recived[4])); // Bulk String response
             break;
 
+        case 'SET':
+            store[recived[4]] = recived[6];
+            connection.write('+OK\r\n');
+            break;
+
+        case 'GET':
+            if (!recived[4] in store) connection.write('$-1\r\n');
+            const value = store[recived[4]];
+            connection.write(redisProtocolParser(value));
+            break;
+        
         default:
             break;
     }
