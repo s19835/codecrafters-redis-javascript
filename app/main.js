@@ -30,12 +30,22 @@ const server = net.createServer((connection) => {
         case 'SET':
             store[recived[4]] = recived[6];
             connection.write('+OK\r\n');
+            
+            if (recived[8]) {
+                const waitTime = parseInt(recived[10]);
+                setTimeout(() => {
+                    delete store[recived[4]];
+                }, waitTime);
+            }
             break;
 
         case 'GET':
-            if (!recived[4] in store) connection.write('$-1\r\n');
-            const value = store[recived[4]];
-            connection.write(redisProtocolParser(value));
+            if (recived[4] in store) { 
+                const value = store[recived[4]];
+                connection.write(redisProtocolParser(value));
+            } else {
+                connection.write('$-1\r\n');
+            }
             break;
         
         default:
