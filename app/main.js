@@ -57,6 +57,19 @@ const server = net.createServer((connection) => {
                 connection.write('$-1\r\n');
             }
             break;
+
+        case 'INFO':
+            if (recived[4].toLowerCase() === 'replication') {
+                const header = redisProtocolParser('# Replication');
+                let role;
+                if (port === 6379) {
+                    role = redisProtocolParser('role:master');
+                }
+
+                const infoReplication = redisProtocolParser(header+role);
+                connection.write(infoReplication);
+            }
+            break;
         
         default:
             break;
