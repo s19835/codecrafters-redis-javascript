@@ -62,7 +62,18 @@ const server = net.createServer((connection) => {
             if (recived[4].toLowerCase() === 'replication') {
                 const header = redisProtocolParser('# Replication');
                 let role;
-                if (port === 6379) {
+                
+                if (args.includes('--replicaof')) {
+                    const replica = args[args.indexOf('--replicaof') + 1].split(' ');
+                    const replicaof = parseInt(replica[1]);
+                    
+                    if (replicaof === port) {
+                        throw new Error('Setting the replicaof to the current instance is not allowed.');
+                    } else {
+                        role = redisProtocolParser('role:slave');
+                    }
+
+                } else {
                     role = redisProtocolParser('role:master');
                 }
 
