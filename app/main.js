@@ -77,7 +77,10 @@ const server = net.createServer((connection) => {
                     role = redisProtocolParser('role:master');
                 }
 
-                const infoReplication = redisProtocolParser(header+role);
+                const replId = redisProtocolParser('master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb');
+                const replOffset = redisProtocolParser('master_repl_offset:0');
+
+                const infoReplication = redisProtocolParser(header+role+replId+replOffset);
                 connection.write(infoReplication);
             }
             break;
