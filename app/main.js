@@ -5,9 +5,23 @@ const store = {};
 
 // Get the specified port from input
 const args = process.argv;
-let port;
+let port, replicaof;
+
 if (args.includes('--port')) { 
-    port = parseInt(args[args.indexOf('--port') + 1]); 
+    port = parseInt(args[args.indexOf('--port') + 1]);
+
+    if (args.includes('--replicaof')) {
+        const replica = args[args.indexOf('--replicaof') + 1].split(' ');
+        replicaof = parseInt(replica[1]);
+
+        // Create connection to the master port from slave
+        const master = net.createConnection({
+            host: replica[0],
+            port: replicaof
+        }, () => {
+            master.write(`*1\r\n${redisProtocolParser('PING')}`);
+        });
+    }
 } else {
     port = 6379;
 }
@@ -20,7 +34,7 @@ function redisProtocolParser(data) {
 const server = net.createServer((connection) => {
   // Handle connection
   connection.on("data", (data) => {
-    const recived = data.toString().split('\r\n');
+    const recived = data.toString().split('\r\n'); console.log(recived);
     
     if (!recived) {
         throw new Error("Invalid input");
@@ -63,10 +77,7 @@ const server = net.createServer((connection) => {
                 const header = redisProtocolParser('# Replication');
                 let role;
                 
-                if (args.includes('--replicaof')) {
-                    const replica = args[args.indexOf('--replicaof') + 1].split(' ');
-                    const replicaof = parseInt(replica[1]);
-                    
+                if (replicaof) {
                     if (replicaof === port) {
                         throw new Error('Setting the replicaof to the current instance is not allowed.');
                     } else {
