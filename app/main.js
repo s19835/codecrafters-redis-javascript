@@ -5,7 +5,7 @@ const store = {};
 
 // Get the specified port from input
 const args = process.argv;
-let port, replicaof;
+let port, replicaof, master;
 
 if (args.includes('--port')) { 
     port = parseInt(args[args.indexOf('--port') + 1]);
@@ -15,7 +15,7 @@ if (args.includes('--port')) {
         replicaof = parseInt(replica[1]);
 
         // Create connection to the master port from slave
-        const master = net.createConnection({
+        master = net.createConnection({
             host: replica[0],
             port: replicaof
         }, () => {
@@ -24,6 +24,18 @@ if (args.includes('--port')) {
     }
 } else {
     port = 6379;
+}
+
+if (master) {
+    master.on("data", (data) => {
+        if (data.includes('PONG')) {
+            master.write(`*3\r\n${redisProtocolParser('REPLCONF')}${redisProtocolParser('listening-port')}${redisProtocolParser(port.toString())}`);
+        }
+    
+        if (data.includes('OK')) {
+            master.write(`*3\r\n${redisProtocolParser('REPLCONF')}${redisProtocolParser('capa')}${redisProtocolParser('psync2')}`);
+        }
+    });
 }
 
 // Implement a Redis protocol parser
