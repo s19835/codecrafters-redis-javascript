@@ -6,6 +6,8 @@ const store = {};
 // Get the specified port from input
 const args = process.argv;
 let port, replicaof, master;
+let replId = '8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb';
+let replOffset = 0;
 
 if (args.includes('--port')) { 
     port = parseInt(args[args.indexOf('--port') + 1]);
@@ -60,7 +62,7 @@ function redisProtocolParser(data) {
 const server = net.createServer((connection) => {
   // Handle connection
   connection.on("data", (data) => {
-    const recived = data.toString().split('\r\n'); console.log(recived);
+    const recived = data.toString().split('\r\n');
     
     if (!recived) {
         throw new Error("Invalid input");
@@ -114,16 +116,20 @@ const server = net.createServer((connection) => {
                     role = redisProtocolParser('role:master');
                 }
 
-                const replId = redisProtocolParser('master_replid:8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb');
-                const replOffset = redisProtocolParser('master_repl_offset:0');
+                const replIdStr = redisProtocolParser(`master_replid:${replId}`);
+                const replOffsetStr = redisProtocolParser(`master_repl_offset:${replOffset}`);
 
-                const infoReplication = redisProtocolParser(header+role+replId+replOffset);
+                const infoReplication = redisProtocolParser(header+role+replIdStr+replOffsetStr);
                 connection.write(infoReplication);
             }
             break;
 
         case 'REPLCONF':
             connection.write('+OK\r\n');
+            break;
+
+        case 'PSYNC':
+            connection.write(`+FULLRESYNC ${replId} ${replOffset}\r\n`);
             break;
         
         default:
