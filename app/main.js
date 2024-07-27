@@ -34,8 +34,22 @@ if (master) {
     
         if (data.includes('OK')) {
             master.write(`*3\r\n${redisProtocolParser('REPLCONF')}${redisProtocolParser('capa')}${redisProtocolParser('psync2')}`);
+            master.write(`*3\r\n${redisProtocolParser('PSYNC')}${redisProtocolParser('?')}${redisProtocolParser('-1')}`);
+        }
+
+        if (data.includes('+FULLRESYNC')) {
+            const dataSet = data.toString().split(' ');
+            const replId = dataSet[dataSet.indexOf('+FULLRESYNC') + 1];
         }
     });
+
+    master.on("close", () => {
+        console.log('connection closed');
+    });
+
+    master.on("error", (err) => {
+        console.error('Error: ', err.message);
+    })
 }
 
 // Implement a Redis protocol parser
