@@ -121,6 +121,10 @@ const server = net.createServer((connection) => {
                 connection.write(infoReplication);
             }
             break;
+
+        case 'REPLCONF':
+            connection.write('+OK\r\n');
+            break;
         
         default:
             break;
