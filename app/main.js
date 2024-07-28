@@ -130,6 +130,16 @@ const server = net.createServer((connection) => {
 
         case 'PSYNC':
             connection.write(`+FULLRESYNC ${replId} ${replOffset}\r\n`);
+
+            // After sending the FULLRESYNC replica expecting an rdb file of current state in master
+            const rdbFileBase64 = "UkVESVMwMDEx+glyZWRpcy12ZXIFNy4yLjD6CnJlZGlzLWJpdHPAQPoFY3RpbWXCbQi8ZfoIdXNlZC1tZW3CsMQQAPoIYW9mLWJhc2XAAP/wbjv+wP9aog==";
+
+            const decodedBinaryData = Buffer.from(rdbFileBase64, 'base64');
+            const fileLength = Buffer.from(`$${decodedBinaryData.length}\r\n`);
+            // $<length_of_file>\r\n<contents_of_file>
+            const formatedRdb = Buffer.concat([fileLength, decodedBinaryData]);
+            
+            connection.write(formatedRdb);
             break;
         
         default:
