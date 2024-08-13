@@ -3,6 +3,9 @@ import net from "net";
 // Object for stroing key value pair for GET, SET
 const store = {};
 
+// Store all replica details
+const replicas = [];
+
 // Get the specified port from input
 const args = process.argv;
 let port, replicaof, master, replicaPort;
@@ -13,12 +16,12 @@ if (args.includes('--port')) {
     port = parseInt(args[args.indexOf('--port') + 1]);
 
     if (args.includes('--replicaof')) {
-        const replicas = args[args.indexOf('--replicaof') + 1].split(' ');
-        replicaof = parseInt(replicas[1]);
+        const replica = args[args.indexOf('--replicaof') + 1].split(' ');
+        replicaof = parseInt(replica[1]);
 
         // Create connection to the master port from slave
         master = net.createConnection({
-            host: replicas[0],
+            host: replica[0],
             port: replicaof
         }, () => {
             master.write(`*1\r\n${redisProtocolParser('PING')}`);
@@ -83,6 +86,11 @@ const server = net.createServer((connection) => {
             store[recived[4]] = recived[6];
             connection.write('+OK\r\n');
 
+            // Propagate set command to Replica
+            replicas.forEach((replica) => {
+                replica.write(data);
+            });
+
             if (recived[8]) {
                 const waitTime = parseInt(recived[10]);
                 setTimeout(() => {
@@ -146,6 +154,7 @@ const server = net.createServer((connection) => {
             const formatedRdb = Buffer.concat([fileLength, decodedBinaryData]);
             
             connection.write(formatedRdb);
+            replicas.push(connection);
             break;
         
         default:
