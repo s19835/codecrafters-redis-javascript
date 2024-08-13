@@ -5,7 +5,7 @@ const store = {};
 
 // Get the specified port from input
 const args = process.argv;
-let port, replicaof, master;
+let port, replicaof, master, replicaPort;
 let replId = '8371b4fb1155b71f4a04d3e1bc3e18c4a990aeeb';
 let replOffset = 0;
 
@@ -13,12 +13,12 @@ if (args.includes('--port')) {
     port = parseInt(args[args.indexOf('--port') + 1]);
 
     if (args.includes('--replicaof')) {
-        const replica = args[args.indexOf('--replicaof') + 1].split(' ');
-        replicaof = parseInt(replica[1]);
+        const replicas = args[args.indexOf('--replicaof') + 1].split(' ');
+        replicaof = parseInt(replicas[1]);
 
         // Create connection to the master port from slave
         master = net.createConnection({
-            host: replica[0],
+            host: replicas[0],
             port: replicaof
         }, () => {
             master.write(`*1\r\n${redisProtocolParser('PING')}`);
@@ -82,7 +82,7 @@ const server = net.createServer((connection) => {
         case 'SET':
             store[recived[4]] = recived[6];
             connection.write('+OK\r\n');
-            
+
             if (recived[8]) {
                 const waitTime = parseInt(recived[10]);
                 setTimeout(() => {
@@ -125,6 +125,13 @@ const server = net.createServer((connection) => {
             break;
 
         case 'REPLCONF':
+            // replica is available on listening port for any potential reverse communication.
+            const replconf = data.toString().split('\r\n');
+            if (replconf.includes('listening-port')) {
+                replicaPort = replconf[replconf.indexOf('listening-port') + 2];
+            }
+            
+            console.log(replicaPort);
             connection.write('+OK\r\n');
             break;
 
@@ -145,7 +152,7 @@ const server = net.createServer((connection) => {
         default:
             break;
     }
-  })
+  });
 });
 
 server.listen(port, "127.0.0.1");
