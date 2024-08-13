@@ -62,6 +62,13 @@ function redisProtocolParser(data) {
     return `$${data.length}\r\n${data}\r\n`;
 }
 
+// Propagate set command to Replica
+function propgate(data) {
+    replicas.forEach((replica) => {
+        replica.write(data);
+    });
+}
+
 const server = net.createServer((connection) => {
   // Handle connection
   connection.on("data", (data) => {
@@ -86,10 +93,7 @@ const server = net.createServer((connection) => {
             store[recived[4]] = recived[6];
             connection.write('+OK\r\n');
 
-            // Propagate set command to Replica
-            replicas.forEach((replica) => {
-                replica.write(data);
-            });
+            propropgate(data);
 
             if (recived[8]) {
                 const waitTime = parseInt(recived[10]);
