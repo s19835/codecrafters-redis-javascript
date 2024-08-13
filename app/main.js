@@ -93,7 +93,7 @@ const server = net.createServer((connection) => {
             store[recived[4]] = recived[6];
             connection.write('+OK\r\n');
 
-            propropgate(data);
+            propgate(data);
 
             if (recived[8]) {
                 const waitTime = parseInt(recived[10]);
