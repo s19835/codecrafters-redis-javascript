@@ -130,8 +130,7 @@ const server = net.createServer((connection) => {
             if (replconf.includes('listening-port')) {
                 replicaPort = replconf[replconf.indexOf('listening-port') + 2];
             }
-            
-            console.log(replicaPort);
+
             connection.write('+OK\r\n');
             break;
 
